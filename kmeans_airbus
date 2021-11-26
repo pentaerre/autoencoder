@@ -1,0 +1,42 @@
+def kmeans_modelePoch_1_1(ff1_fft_equal_duration_dataset_vectorized):
+
+    from pyspark.ml.clustering import KMeans
+    from pyspark.ml.evaluation import ClusteringEvaluator
+
+    # Loads data.
+    input_df = ff1_fft_equal_duration_dataset_vectorized
+
+    dataset = input_df.select("aircraft_id", "label_id", F.col("ff1_seq").alias("features"))
+
+    # Trains a k-means model.
+    kmeans = KMeans().setK(3).setSeed(1)
+    model = kmeans.fit(dataset)
+
+    # Make predictions
+    predictions = model.transform(dataset)
+
+    # Evaluate clustering by computing Silhouette score
+    evaluator = ClusteringEvaluator()
+
+    silhouette = evaluator.evaluate(predictions)
+    print("Silhouette with squared euclidean distance = " + str(silhouette))
+
+    # Shows the result.
+    centers = model.clusterCenters()
+    print("Cluster Centers: ")
+    for center in centers:
+        print(center)            
+
+    import matplotlib.pyplot as plt
+    from mpl_toolkits.mplot3d import Axes3D
+    fig = plt.figure()
+    plt.title("Centroids visualization")
+    plt.xlabel('time')
+    plt.ylabel('ff1')
+    for i in range(len(centers)):
+        ax = fig.add_subplot(111)
+        ax.scatter(range(len(centers[i])), centers[i])
+    plt.show()
+
+
+    return predictions
